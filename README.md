@@ -1,14 +1,12 @@
 <div align="center">
-  <h1>Repository Name</h1>
+  <h1>stronghold-calculator</h1>
 	<blockquote>
-		<p><i>Short little flavor text</i></p>
-		<p><b>Here is the main description of the code. Here is a link to something <a href="https://github.com/KacperBazan/RubiksCube">cool</a>. You better click that link dude.</b></p>
+		<p><i>How far is this shit?</i></p>
+		<p><b>In a Minecraft speedrun, the runner usually has enough obsidian blocks at the end of their bartering session to build a secondary portal to exit the overworld. Where to build the portal though? That's the question. This C++ program generates a text file with distances from spawn, and the respective average distance to the nearest stronghold. In <a href="https://www.youtube.com/watch?v=12efBB7SW9c&t=61s">this</a> video you can see an explanation of nether exiting strategy within a standard Minecraft speedrun. </b></p>
 		<img src=https://img.shields.io/badge/Build-Working-brightgreen> <img src=https://img.shields.io/badge/License-MIT-yellow>
-		<img src=https://img.shields.io/badge/Progress-Incomplete-red>
+		<img src=https://img.shields.io/badge/Progress-Finalizing-orange>
 	</blockquote>
 </div>
-
-- Jul/25/20XX: Little update to my code.
 
 ## Images
 ![alt text](https://IMAGE1)
