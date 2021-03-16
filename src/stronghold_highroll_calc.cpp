@@ -31,7 +31,7 @@ generation.
 */
 std::uniform_real_distribution<double> ranRadius(1408.0, 2688.0);
 
-const int NUM_SH = 4000;       //Number of stronghold batches.
+const int NUM_SH = 5000;       //Number of stronghold batches.
 const double MAXDIST = 2720;   //Maximum distance one would build a portal.
 const double STARTDIST = 1360; //Minimum distance one would build a portal.
 const int THRESHOLD = 20;      //Distance stronghold needs to be to deem blind travel a success.
@@ -169,5 +169,5 @@ int main()
 {
     generateStrongholds();
     generateOdds(THRESHOLD);
-    writeToFile("stronghold_highroll_output.txt");
+    writeToFile("highroll_chance.txt");
 }

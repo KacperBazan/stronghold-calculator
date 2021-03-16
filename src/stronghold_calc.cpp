@@ -32,10 +32,10 @@ std::uniform_real_distribution<double> r8(22784.0, 24320.0);
 std::uniform_real_distribution<double> ranRadius[8] = {r1, r2, r3, r4, r5, r6, r7, r8};
 
 const int COUNT_SH[8] = {3, 6, 10, 15, 21, 28, 36, 9}; //Array holding number of strongholds in each respective ring.
-const int NUM_SH = 100;                                //Number of stronghold batches.
+const int NUM_SH = 1000;                                  //Number of stronghold batches.
 const double STARTDIST = 0;                            //Minimum distance one would build a portal.
 const double MAXDIST = 25000;                          //Maximum distance one would build a portal.
-const int RES_WIDTH = 5000;                            //Increments of distance between STARTDIST and MAXDIST.
+const int RES_WIDTH = 5000;                             //Increments of distance between STARTDIST and MAXDIST.
 const int RES_THETA = 10;                              //Increments of angle between 0 and 2PI.
 
 double strongholds[NUM_SH][128][2]; //Batches, strongholds, theta + radius of each stronghold
@@ -74,7 +74,6 @@ void printToConsole(int count, int max)
     }
 }
 
-
 void generateStrongholds()
 {
     for (int i = 0; i < NUM_SH; i++)
@@ -82,7 +81,7 @@ void generateStrongholds()
         /* Index and Count are used to refer to COUNT_SH, or the number of
         strongholds in each respective ring. */
         int index = 0, count = 0;
-        double theta = ranTheta(ranGen); 
+        double theta = ranTheta(ranGen);
         for (int j = 0; j < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); j++)
         {
             count++;
@@ -140,7 +139,7 @@ void generateDistances()
                     d = std::min(d, (pow(radius, 2) + pow(strongholds[j][l][1], 2) - (2 * radius * strongholds[j][l][1] * cos(strongholds[j][l][0] - theta))));
                 }
                 /*Saves a running total of the minimum distances */
-                distRunning = distRunning + sqrt(d); 
+                distRunning = distRunning + sqrt(d);
                 d = INFINITY;
             }
         }
@@ -165,7 +164,7 @@ void writeToFile(std::string fn)
         /* Prints the finalized distances list. */
         for (int i = 0; i <= RES_WIDTH; i++)
         {
-            outfile << "Radius: " << distances[i][0] << " | Average Distance: " << distances[i][1] << std::endl;
+            outfile << distances[i][0] << ", " << distances[i][1] << std::endl;
         }
         outfile << std::endl;
 
@@ -180,5 +179,5 @@ int main()
 {
     generateStrongholds();
     generateDistances();
-    writeToFile("stronghold_output.txt");
+    writeToFile("avg_distance.txt");
 }
