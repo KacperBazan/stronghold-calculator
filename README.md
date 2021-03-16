@@ -4,14 +4,15 @@
 		<p><i>How far is this shit?</i></p>
 		<p><b>In a Minecraft speedrun, the runner usually has enough obsidian blocks at the end of their bartering session to build a secondary portal to exit the overworld. Where to build the portal though? That's the question. This C++ program generates a text file with distances from spawn, and the respective average distance to the nearest stronghold. Additionally, if you want a specific distance the stronghold to be within, there is a highroll calculator that determines the best placement for a highroll portal. Top runners don't care about minimizing 1000 block blind travels, they care about maximizing the chances of super close portals. In <a href="https://www.youtube.com/watch?v=12efBB7SW9c&t=61s">this</a> video you can see an explanation of nether exiting strategy within a standard Minecraft speedrun. </b></p>
 		<img src=https://img.shields.io/badge/Build-Working-brightgreen> <img src=https://img.shields.io/badge/License-MIT-yellow>
-		<img src=https://img.shields.io/badge/Progress-Finalizing-orange>
+		<img src=https://img.shields.io/badge/Progress-Complete-brightgreen>
 	</blockquote>
 </div>
 
 ## Results
-<div style="text-align:center"><img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Average%20Distance%20To%20Stronghold.png" /></div>
-<div style="text-align:center"><img src="1" /></div>
-<div style="text-align:center"><img src="2" /></div>
+<img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Average%20Distance%20To%20Stronghold.png" height="550">
+<img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Best%20Blind%20Odds%20(20%20Block).png" height="550">
+<img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Best%20Blind%20Odds%20(300%20Block).png" height="550">
+
 > To minimize your average distance to the stronghold, the optimal blind travel is around **~212 blocks** from the origin in the nether. In practice, anything around 200 blocks will provide sufficient results.
 > To increase your chances of a highroll portal, specifically a 20 block blind travel, one would need to blind travel around **~176 blocks** or around **~203 blocks** from the origin in the nether. Since the chances are incredibly low here anyway, anything close in these ranges will provide sufficient results.
 
