@@ -1,6 +1,6 @@
 /*
- * Program Name: stronghold_calc.cpp
- * Program Description: C++ Program that generates average distance to a Minecraft stronghold depending on distance from origin.
+ * Program Name: stronghold_highroll_calc.cpp
+ * Program Description: C++ Program that generates best chances at blinding at a particular distance.
  * Date Started: Mar/10/2021
  * Author: Kacper Bazan
  * Author Link: https://github.com/KacperBazan
@@ -19,27 +19,27 @@
 
 std::default_random_engine ranGen;
 std::uniform_real_distribution<double> ranTheta(0.0, 2 * PI);
-std::uniform_real_distribution<double> r1(1280.0, 2816.0);
-std::uniform_real_distribution<double> r2(4352.0, 5888.0);
-std::uniform_real_distribution<double> r3(7424.0, 8960.0);
-std::uniform_real_distribution<double> r4(10496.0, 12032.0);
-std::uniform_real_distribution<double> r5(13568.0, 15104.0);
-std::uniform_real_distribution<double> r6(16640.0, 18176.0);
-std::uniform_real_distribution<double> r7(19712.0, 21248.0);
-std::uniform_real_distribution<double> r8(22784.0, 24320.0);
 
-/* Array holding random generators to be easily refered to later. */
-std::uniform_real_distribution<double> ranRadius[8] = {r1, r2, r3, r4, r5, r6, r7, r8};
+/*
+The wiki states that strongholds in the first ring generate between
+1280 and 2816 blocks. However, the strongholds initial RNG call is between
+1408 and 2688 blocls, 128 blocks less in each direction. This is because
+the generated stronghold snaps due to biome placement somewhere in the 128
+block range. More research and data collection needs to be made regarding
+this, but for now, the adjusted range covers the vast majority of stronghold
+generation.
+*/
+std::uniform_real_distribution<double> ranRadius(1408.0, 2688.0);
 
-const int COUNT_SH[8] = {3, 6, 10, 15, 21, 28, 36, 9}; //Array holding number of strongholds in each respective ring.
-const int NUM_SH = 100;                                //Number of stronghold batches.
-const double STARTDIST = 0;                            //Minimum distance one would build a portal.
-const double MAXDIST = 25000;                          //Maximum distance one would build a portal.
-const int RES_WIDTH = 5000;                            //Increments of distance between STARTDIST and MAXDIST.
-const int RES_THETA = 10;                              //Increments of angle between 0 and 2PI.
+const int NUM_SH = 4000;       //Number of stronghold batches.
+const double MAXDIST = 2720;   //Maximum distance one would build a portal.
+const double STARTDIST = 1360; //Minimum distance one would build a portal.
+const int THRESHOLD = 20;      //Distance stronghold needs to be to deem blind travel a success.
+const int RES_WIDTH = 5000;    //Increments of distance between STARTDIST and MAXDIST.
+const int RES_THETA = 2000;    //Increments of angle between 0 and 2PI.
 
-double strongholds[NUM_SH][128][2]; //Batches, strongholds, theta + radius of each stronghold
-double distances[RES_WIDTH][2];     //Radius increments, radius value + average distance.
+double strongholds[NUM_SH][3][2]; //Batches, strongholds, theta + radius of each stronghold
+double distances[RES_WIDTH][2];   //Radius increments, radius value + average distance.
 
 void printToConsole(int count, int max)
 {
@@ -74,43 +74,26 @@ void printToConsole(int count, int max)
     }
 }
 
-
 void generateStrongholds()
 {
     for (int i = 0; i < NUM_SH; i++)
     {
-        /* Index and Count are used to refer to COUNT_SH, or the number of
-        strongholds in each respective ring. */
-        int index = 0, count = 0;
-        double theta = ranTheta(ranGen); 
+        double theta = ranTheta(ranGen);
         for (int j = 0; j < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); j++)
         {
-            count++;
-            /* Since each ring has a different number of equally spaced strongholds,
-            count is incremented once we exhaust all the strongholds in a ring, and
-            we generate a new theta to begin spacing out strongholds. We know we exhaust
-            all the strongholds in a ring when the index value matches the count of
-            generated strongholds */
-            if (count > COUNT_SH[index])
-            {
-                double theta = ranTheta(ranGen);
-                count = 1;
-                index++;
-            }
             /* Subtracts 2PI from the angle if it exceeds 2PI, effectively clamping the value between 0 and 2PI. */
-            theta = theta + ((2 * PI) / COUNT_SH[index]) - (2 * PI * ((theta + ((2 * PI) / COUNT_SH[index])) > 2 * PI));
+            theta = theta + ((2 * PI) / 3) - (2 * PI * ((theta + ((2 * PI) / 3)) > 2 * PI));
             strongholds[i][j][0] = theta;
-            strongholds[i][j][1] = ranRadius[index](ranGen);
+            strongholds[i][j][1] = ranRadius(ranGen);
         }
     }
 }
 
-void generateDistances()
+void generateOdds(int t)
 {
     double theta;
     double radius;
     double d = INFINITY;
-    double distRunning = 0;
 
     /* Variables to determine loading bar */
     int loadMax = 100;
@@ -127,7 +110,8 @@ void generateDistances()
             loadCount++;
         }
 
-        radius = i * MAXDIST / RES_WIDTH;
+        int highRoll = 0;
+        radius = (i * (MAXDIST - STARTDIST) / RES_WIDTH) + STARTDIST;
         for (int j = 0; j < NUM_SH; j++)
         {
             for (int k = 0; k < RES_THETA; k++)
@@ -139,14 +123,18 @@ void generateDistances()
                     /* Checks each stronghold and saves minimum distance to d*/
                     d = std::min(d, (pow(radius, 2) + pow(strongholds[j][l][1], 2) - (2 * radius * strongholds[j][l][1] * cos(strongholds[j][l][0] - theta))));
                 }
-                /*Saves a running total of the minimum distances */
-                distRunning = distRunning + sqrt(d); 
+
+                /* Checks if stronghold is within threshold distance */
+                if (d <= pow(t, 2))
+                {
+                    highRoll++;
+                }
                 d = INFINITY;
             }
         }
         distances[i][0] = radius;
-        distances[i][1] = distRunning / (RES_THETA * NUM_SH);
-        distRunning = 0;
+        distances[i][1] = highRoll;
+        highRoll = 0;
     }
 }
 
@@ -165,7 +153,8 @@ void writeToFile(std::string fn)
         /* Prints the finalized distances list. */
         for (int i = 0; i <= RES_WIDTH; i++)
         {
-            outfile << "Radius: " << distances[i][0] << " | Average Distance: " << distances[i][1] << std::endl;
+            //outfile << "Radius: " << distances[i][0] << " | Average Distance: " << distances[i][1] << std::endl;
+            outfile << distances[i][0] << ", " << distances[i][1] << std::endl;
         }
         outfile << std::endl;
 
@@ -179,6 +168,6 @@ void writeToFile(std::string fn)
 int main()
 {
     generateStrongholds();
-    generateDistances();
-    writeToFile("stronghold_output.txt");
+    generateOdds(THRESHOLD);
+    writeToFile("stronghold_highroll_output.txt");
 }
