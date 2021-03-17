@@ -14,32 +14,78 @@
 #include <fstream>  //ofstream
 #include <math.h>   //cos
 #include <random>   //default_random_engine...
+#include <vector>
 
 #define PI 3.14159265
 
 std::default_random_engine ranGen;
 std::uniform_real_distribution<double> ranTheta(0.0, 2 * PI);
-std::uniform_real_distribution<double> r1(1280.0, 2816.0);
-std::uniform_real_distribution<double> r2(4352.0, 5888.0);
-std::uniform_real_distribution<double> r3(7424.0, 8960.0);
-std::uniform_real_distribution<double> r4(10496.0, 12032.0);
-std::uniform_real_distribution<double> r5(13568.0, 15104.0);
-std::uniform_real_distribution<double> r6(16640.0, 18176.0);
-std::uniform_real_distribution<double> r7(19712.0, 21248.0);
-std::uniform_real_distribution<double> r8(22784.0, 24320.0);
+std::uniform_real_distribution<double> r1(1408, 2688);
+std::uniform_real_distribution<double> r2(4480, 5760);
+std::uniform_real_distribution<double> r3(7552, 8832);
+std::uniform_real_distribution<double> r4(10624, 11904);
+std::uniform_real_distribution<double> r5(13696, 14976);
+std::uniform_real_distribution<double> r6(16768, 18048);
+std::uniform_real_distribution<double> r7(19840, 21120);
+std::uniform_real_distribution<double> r8(22912, 24192);
 
 /* Array holding random generators to be easily refered to later. */
 std::uniform_real_distribution<double> ranRadius[8] = {r1, r2, r3, r4, r5, r6, r7, r8};
 
 const int COUNT_SH[8] = {3, 6, 10, 15, 21, 28, 36, 9}; //Array holding number of strongholds in each respective ring.
-const int NUM_SH = 1000;                                  //Number of stronghold batches.
-const double STARTDIST = 0;                            //Minimum distance one would build a portal.
-const double MAXDIST = 25000;                          //Maximum distance one would build a portal.
-const int RES_WIDTH = 5000;                             //Increments of distance between STARTDIST and MAXDIST.
-const int RES_THETA = 10;                              //Increments of angle between 0 and 2PI.
 
-double strongholds[NUM_SH][128][2]; //Batches, strongholds, theta + radius of each stronghold
-double distances[RES_WIDTH][2];     //Radius increments, radius value + average distance.
+/* Variables to determine loading bar */
+const int LOADMAX = 100;
+double loadCount = 1;
+
+int BATCHES = 50;      //Number of stronghold batches.
+int DESIRED_SH = 128;  //Value of strongholds simulated world has. Limited between 3 (first ring) and 128 (all rings).
+int RES_WIDTH = 250;   //Increments of distance between STARTDIST and MAXDIST.
+int RES_THETA = 25;    //Increments of angle between 0 and 2PI.
+double STARTDIST = 0;  //Minimum distance one would build a portal.
+double MAXDIST = 3000; //Maximum distance one would build a portal.
+
+std::vector<std::vector<std::vector<double>>> batches; //Batches of strongholds that will be generated [BATCHES][DESIRED_SH][2]
+std::vector<std::vector<double>> avgDistances;         //Vector holding every distance increment along with its average distance [RES_WIDTH][2]
+
+void userInput()
+{
+    std::string u;
+    std::cout << "Would you like to run with default settings? [y/n]: ";
+    std::cout << std::endl;
+    std::cin >> u;
+    if (u == "n" || u == "N" || u == "no" || u == "NO")
+    {
+        DESIRED_SH = 0;
+        while (DESIRED_SH == 0)
+        {
+            std::cout << "Number of desired strongholds in world. Always between 3 and 128. [0 for help] (DESIRED_SH): ";
+            std::cin >> DESIRED_SH;
+            if (DESIRED_SH == 0)
+            {
+                std::cout << std::endl;
+                std::cout << "Strongholds generate in eight different rings starting around 1408 blocks away from the origin." << std::endl;
+                std::cout << "There are 3 strongholds in the first ring, followed by 6, 10, 15, 21, 28, 36, and finally 9. 128 in total." << std::endl;
+                std::cout << "Speedrunners only really care about the first ring, and therefore the first three strongholds." << std::endl;
+                std::cout << "This program calculates the average distance graph for all 128 strongholds." << std::endl;
+                std::cout << "However, if you'd like to change that, change the DESIRED_SH value." << std::endl;
+                std::cout << "If you want to calculate up to the 'nth' ring, make sure to add the strongholds from previous rings." << std::endl;
+                std::cout << std::endl;
+            }
+        }
+        std::cout << "No. of stronghold batches (BATCHES):  ";
+        std::cin >> BATCHES;
+        std::cout << "Minimum portal distance (STARTDIST):  ";
+        std::cin >> STARTDIST;
+        std::cout << "Maximum portal distance (MAXDIST):    ";
+        std::cin >> MAXDIST;
+        std::cout << "No. of width increments (RES_WIDTH):  ";
+        std::cin >> RES_WIDTH;
+        std::cout << "No. of angle increments (RES_THETA):  ";
+        std::cin >> RES_THETA;
+        std::cout << std::endl;
+    }
+}
 
 void printToConsole(int count, int max)
 {
@@ -76,13 +122,29 @@ void printToConsole(int count, int max)
 
 void generateStrongholds()
 {
-    for (int i = 0; i < NUM_SH; i++)
+    /* Initialize multidimensional vector */
+    for (int i = 0; i < BATCHES; i++)
+    {
+        std::vector<std::vector<double>> stronghold;
+        for (int j = 0; j < DESIRED_SH; j++)
+        {
+            std::vector<double> data;
+            for (int k = 0; k < 2; k++)
+            {
+                data.push_back(0);
+            }
+            stronghold.push_back(data);
+        }
+        batches.push_back(stronghold);
+    }
+
+    for (int i = 0; i < BATCHES; i++)
     {
         /* Index and Count are used to refer to COUNT_SH, or the number of
         strongholds in each respective ring. */
         int index = 0, count = 0;
         double theta = ranTheta(ranGen);
-        for (int j = 0; j < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); j++)
+        for (int j = 0; j < DESIRED_SH; j++)
         {
             count++;
             /* Since each ring has a different number of equally spaced strongholds,
@@ -98,53 +160,61 @@ void generateStrongholds()
             }
             /* Subtracts 2PI from the angle if it exceeds 2PI, effectively clamping the value between 0 and 2PI. */
             theta = theta + ((2 * PI) / COUNT_SH[index]) - (2 * PI * ((theta + ((2 * PI) / COUNT_SH[index])) > 2 * PI));
-            strongholds[i][j][0] = theta;
-            strongholds[i][j][1] = ranRadius[index](ranGen);
+            batches[i][j][0] = theta;
+            batches[i][j][1] = ranRadius[index](ranGen);
         }
     }
 }
 
 void generateDistances()
 {
+    /* Initialize multidimensional vector */
+    for (int i = 0; i < RES_WIDTH; i++)
+    {
+        std::vector<double> data;
+        for (int j = 0; j < 2; j++)
+        {
+            data.push_back(0);
+        }
+        avgDistances.push_back(data);
+    }
+
     double theta;
     double radius;
     double d = INFINITY;
     double distRunning = 0;
 
-    /* Variables to determine loading bar */
-    int loadMax = 100;
-    double loadCount = 1;
+    double loadInc = double(RES_WIDTH) / double(LOADMAX);
+    printToConsole(-1, LOADMAX);
 
-    printToConsole(-1, loadMax);
-
-    for (int i = 0; i <= RES_WIDTH; i++)
+    for (int i = 0; i < RES_WIDTH; i++)
     {
         /* Updates loading bar */
-        if (i >= ((RES_WIDTH / loadMax) * loadCount))
+        if (i + 1 >= loadInc * loadCount)
         {
-            printToConsole(loadCount, loadMax);
+            printToConsole(loadCount, LOADMAX);
             loadCount++;
         }
 
-        radius = i * MAXDIST / RES_WIDTH;
-        for (int j = 0; j < NUM_SH; j++)
+        radius = (i * (MAXDIST - STARTDIST) / double(RES_WIDTH)) + STARTDIST;
+        for (int j = 0; j < BATCHES; j++)
         {
             for (int k = 0; k < RES_THETA; k++)
             {
                 theta = k * (2 * PI) / RES_THETA;
 
-                for (int l = 0; l < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); l++)
+                for (int l = 0; l < DESIRED_SH; l++)
                 {
                     /* Checks each stronghold and saves minimum distance to d*/
-                    d = std::min(d, (pow(radius, 2) + pow(strongholds[j][l][1], 2) - (2 * radius * strongholds[j][l][1] * cos(strongholds[j][l][0] - theta))));
+                    d = std::min(d, (radius * radius + batches[j][l][1] * batches[j][l][1] - (2 * radius * batches[j][l][1] * cos(batches[j][l][0] - theta))));
                 }
                 /*Saves a running total of the minimum distances */
                 distRunning = distRunning + sqrt(d);
                 d = INFINITY;
             }
         }
-        distances[i][0] = radius;
-        distances[i][1] = distRunning / (RES_THETA * NUM_SH);
+        avgDistances[i][0] = radius;
+        avgDistances[i][1] = distRunning / (RES_THETA * BATCHES);
         distRunning = 0;
     }
 }
@@ -162,12 +232,12 @@ void writeToFile(std::string fn)
         //process the file...
 
         /* Prints the finalized distances list. */
-        for (int i = 0; i <= RES_WIDTH; i++)
+        for (int i = 0; i < RES_WIDTH; i++)
         {
-            outfile << distances[i][0] << ", " << distances[i][1] << std::endl;
+            outfile << avgDistances[i][0] << ", " << avgDistances[i][1] << std::endl;
         }
-        outfile << std::endl;
-
+        std::cout << "Calculations Complete. Please check your output file." << std::endl;
+        
         //close it
         outfile.close();
     }
@@ -177,6 +247,7 @@ void writeToFile(std::string fn)
 
 int main()
 {
+    userInput();
     generateStrongholds();
     generateDistances();
     writeToFile("avg_distance.txt");

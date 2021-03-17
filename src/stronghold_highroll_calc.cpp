@@ -14,6 +14,7 @@
 #include <fstream>  //ofstream
 #include <math.h>   //cos
 #include <random>   //default_random_engine...
+#include <vector>
 
 #define PI 3.14159265
 
@@ -31,15 +32,43 @@ generation.
 */
 std::uniform_real_distribution<double> ranRadius(1408.0, 2688.0);
 
-const int NUM_SH = 5000;       //Number of stronghold batches.
-const double MAXDIST = 2720;   //Maximum distance one would build a portal.
-const double STARTDIST = 1360; //Minimum distance one would build a portal.
-const int THRESHOLD = 20;      //Distance stronghold needs to be to deem blind travel a success.
-const int RES_WIDTH = 5000;    //Increments of distance between STARTDIST and MAXDIST.
-const int RES_THETA = 2000;    //Increments of angle between 0 and 2PI.
+/* Variables to determine loading bar */
+const int LOADMAX = 100;
+int loadCount = 1;
 
-double strongholds[NUM_SH][3][2]; //Batches, strongholds, theta + radius of each stronghold
-double distances[RES_WIDTH][2];   //Radius increments, radius value + average distance.
+int BATCHES = 250;       //Number of stronghold batches.
+int RES_WIDTH = 250;     //Increments of distance between STARTDIST and MAXDIST.
+int RES_THETA = 10;      //Increments of angle between 0 and 2PI.
+double THRESHOLD = 1000; //Distance stronghold needs to be to deem blind travel a success.
+double STARTDIST = 0;    //Minimum distance one would build a portal.
+double MAXDIST = 3000;   //Maximum distance one would build a portal.
+
+std::vector<std::vector<std::vector<double>>> batches; //Batches of strongholds that will be generated [BATCHES][DESIRED_SH][2]
+std::vector<std::vector<double>> highRollDistances;    //Vector holding every distance increment along with its high roll distance [RES_WIDTH][2] distances[RES_WIDTH][2];   //Radius increments, radius value + average distance.
+
+void userInput()
+{
+    std::string u;
+    std::cout << "Would you like to run with default settings? [y/n]: ";
+    std::cout << std::endl;
+    std::cin >> u;
+    if (u == "n" || u == "N" || u == "no" || u == "NO")
+    {
+        std::cout << "Block threshold for successful blind travel (THRESHOLD):  ";
+        std::cin >> THRESHOLD;
+        std::cout << "No. of stronghold batches (BATCHES):  ";
+        std::cin >> BATCHES;
+        std::cout << "Minimum portal distance (STARTDIST):  ";
+        std::cin >> STARTDIST;
+        std::cout << "Maximum portal distance (MAXDIST):    ";
+        std::cin >> MAXDIST;
+        std::cout << "No. of width increments (RES_WIDTH):  ";
+        std::cin >> RES_WIDTH;
+        std::cout << "No. of angle increments (RES_THETA):  ";
+        std::cin >> RES_THETA;
+        std::cout << std::endl;
+    }
+}
 
 void printToConsole(int count, int max)
 {
@@ -76,64 +105,88 @@ void printToConsole(int count, int max)
 
 void generateStrongholds()
 {
-    for (int i = 0; i < NUM_SH; i++)
+    /* Initialize multidimensional vector */
+    for (int i = 0; i < BATCHES; i++)
+    {
+        std::vector<std::vector<double>> stronghold;
+        for (int j = 0; j < 3; j++)
+        {
+            std::vector<double> data;
+            for (int k = 0; k < 2; k++)
+            {
+                data.push_back(0);
+            }
+            stronghold.push_back(data);
+        }
+        batches.push_back(stronghold);
+    }
+
+    for (int i = 0; i < BATCHES; i++)
     {
         double theta = ranTheta(ranGen);
-        for (int j = 0; j < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); j++)
+        for (int j = 0; j < 3; j++)
         {
             /* Subtracts 2PI from the angle if it exceeds 2PI, effectively clamping the value between 0 and 2PI. */
             theta = theta + ((2 * PI) / 3) - (2 * PI * ((theta + ((2 * PI) / 3)) > 2 * PI));
-            strongholds[i][j][0] = theta;
-            strongholds[i][j][1] = ranRadius(ranGen);
+            batches[i][j][0] = theta;
+            batches[i][j][1] = ranRadius(ranGen);
         }
     }
 }
 
 void generateOdds(int t)
 {
+    /* Initialize multidimensional vector */
+    for (int i = 0; i < RES_WIDTH; i++)
+    {
+        std::vector<double> data;
+        for (int j = 0; j < 2; j++)
+        {
+            data.push_back(0);
+        }
+        highRollDistances.push_back(data);
+    }
+
     double theta;
     double radius;
     double d = INFINITY;
+    int highRoll = 0;
 
-    /* Variables to determine loading bar */
-    int loadMax = 100;
-    double loadCount = 1;
+    double loadInc = double(RES_WIDTH) / double(LOADMAX);
+    printToConsole(-1, LOADMAX);
 
-    printToConsole(-1, loadMax);
-
-    for (int i = 0; i <= RES_WIDTH; i++)
+    for (int i = 0; i < RES_WIDTH; i++)
     {
         /* Updates loading bar */
-        if (i >= ((RES_WIDTH / loadMax) * loadCount))
+        if (i + 1 >= loadInc * loadCount)
         {
-            printToConsole(loadCount, loadMax);
+            printToConsole(loadCount, LOADMAX);
             loadCount++;
         }
 
-        int highRoll = 0;
-        radius = (i * (MAXDIST - STARTDIST) / RES_WIDTH) + STARTDIST;
-        for (int j = 0; j < NUM_SH; j++)
+        radius = (i * (MAXDIST - STARTDIST) / double(RES_WIDTH)) + STARTDIST;
+        for (int j = 0; j < BATCHES; j++)
         {
             for (int k = 0; k < RES_THETA; k++)
             {
                 theta = k * (2 * PI) / RES_THETA;
 
-                for (int l = 0; l < sizeof(strongholds[0]) / sizeof(strongholds[0][0]); l++)
+                for (int l = 0; l < 3; l++)
                 {
                     /* Checks each stronghold and saves minimum distance to d*/
-                    d = std::min(d, (pow(radius, 2) + pow(strongholds[j][l][1], 2) - (2 * radius * strongholds[j][l][1] * cos(strongholds[j][l][0] - theta))));
+                    d = std::min(d, (radius * radius + batches[j][l][1] * batches[j][l][1] - (2 * radius * batches[j][l][1] * cos(batches[j][l][0] - theta))));
                 }
 
                 /* Checks if stronghold is within threshold distance */
-                if (d <= pow(t, 2))
+                if (d <= (t * t))
                 {
                     highRoll++;
                 }
                 d = INFINITY;
             }
         }
-        distances[i][0] = radius;
-        distances[i][1] = highRoll;
+        highRollDistances[i][0] = radius;
+        highRollDistances[i][1] = highRoll; //Divide by RES_THETA * BATCHES
         highRoll = 0;
     }
 }
@@ -151,12 +204,11 @@ void writeToFile(std::string fn)
         //process the file...
 
         /* Prints the finalized distances list. */
-        for (int i = 0; i <= RES_WIDTH; i++)
+        for (int i = 0; i < RES_WIDTH; i++)
         {
-            //outfile << "Radius: " << distances[i][0] << " | Average Distance: " << distances[i][1] << std::endl;
-            outfile << distances[i][0] << ", " << distances[i][1] << std::endl;
+            outfile << highRollDistances[i][0] << ", " << highRollDistances[i][1] << std::endl;
         }
-        outfile << std::endl;
+        std::cout << "Calculations Complete. Please check your output file." << std::endl;
 
         //close it
         outfile.close();
@@ -167,6 +219,7 @@ void writeToFile(std::string fn)
 
 int main()
 {
+    userInput();
     generateStrongholds();
     generateOdds(THRESHOLD);
     writeToFile("highroll_chance.txt");
