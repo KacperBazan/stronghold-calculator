@@ -26,10 +26,9 @@ For info on stronghold generation, the wiki is linked [here](https://minecraft.g
 2. Unzip the zip file.
 3. Locate the `src` folder.
 4. Locate the `stronghold_calc.cpp` and the `stronghold_highroll_calc` files.
-5. Open the files in your respective IDE.
-6. If you want to output the data into a specific file, change the `.txt` file name in the `writeToFile()` method in `main()`.
-7. Otherwise, build and run the executable. You may change the following variables to refine your search: `STARTDIST`, `MAXDIST`, `NUM_SH`, `RES_WIDTH`, `RES_THETA`, and `THRESHOLD`.
-8. Results should be printed in the desired `.txt` file and can be output into any data handling program.
+5. Open the files in your respective IDE and build them into their respective executables.
+6. You may change the following variables to refine your search: `STARTDIST`, `MAXDIST`, `NUM_SH`, `RES_WIDTH`, `RES_THETA`, and `THRESHOLD`.
+7. Results should be printed in the desired `.txt` file and can be output into any data handling program.
 
 ## Licensing
 *Copyright © 2020 Kacper Bazan* - Email: **bazankacper25@gmail.com**
@@ -40,5 +39,5 @@ For info on stronghold generation, the wiki is linked [here](https://minecraft.g
 1. Improve search algorithm to only check for strongholds within the ring of the searching radius.
 2. Improve accuracy to allow increasingly small percentages. For now it would default to 0% instead of 0.04%. Mitigated by counting number of highrolls and post processing later rather than calculating actual percentages.
 3. Change rings to nether coordinates. This is effectively diving the data by 8.
-4. ~~Add user interface to allow file naming, and the changing of the following variables: `STARTDIST`, `MAXDIST`, `NUM_SH`, `RES_WIDTH`, `RES_THETA`, and `THRESHOLD`.~~
+4. Add user interface to allow file naming, ~~and the changing of the following variables: `STARTDIST`, `MAXDIST`, `NUM_SH`, `RES_WIDTH`, `RES_THETA`, and `THRESHOLD`.~~
 5. Output into a `.csv` file instead of `.txt` to easily import into something like Microsoft Excel for graphing. Or maybe even create my own graphing utility who knows.
