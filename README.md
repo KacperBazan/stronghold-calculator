@@ -10,7 +10,7 @@
 
 ## Results
 <img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Average%20Distance%20To%20Stronghold.png" height="550">
-<img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Best%20Blind%20Odds%20(20%20Block).png" height="550">
+<img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Best%20Blind%20Odds%20(2).png" height="550">
 <img src="https://github.com/KacperBazan/stronghold-calculator/blob/main/img/Best%20Blind%20Odds%20(300%20Block).png" height="550">
 
 > To minimize your average distance to the stronghold, the optimal blind travel is around **~212 blocks** from the origin in the nether. In practice, anything around 200 blocks will provide sufficient results.
